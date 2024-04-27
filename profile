@@ -6,29 +6,8 @@
 # - set environment variables (except bash specific ones)
 # - executed by the command interpreters for login shells. Must be compatible with /bin/sh (bash,dash,ksh)
 #
-# This file is not read by bash(1), if ~/.bash_profile or ~/.bash_login
-# exists.
-# the default umask is set in /etc/profile; for setting the umask
-# for ssh logins, install and configure the libpam-umask package.
-#umask 022
-# set PATH so it includes user's private bin directories
-
-
-# USER Variables
 #
-# personal libraries ~/.local/bkblib/vimlib/vitmux/vitmxux_2023221132.sh
-export PROFILE__BKBLIB_HOME=''
-[ -d "$HOME/.bkblib" ] && export PROFILE__SHELLIB_HOME="$HOME/.bkblib"
-
-export PROFILE__SHELLCONF_HOME=''
-[ -d "$HOME/kit/shellconf" ] && export PROFILE__SHELLCONF_HOME="$HOME/kit/shellconf"
-
-export PROFILE__UTILS_HOME=''
-[ -d "$HOME/kit/utils" ] && export PROFILE__UTILS_HOME="$HOME/kit/utils"
-
-export PROFILE__ALIASES_HOME=''
-[ -d "$HOME/kit/aliases" ] && export PROFILE__ALIASES_HOME="$HOME/kit/aliases"
-
+#
 
 ########## PATH
 

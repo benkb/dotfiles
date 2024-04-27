@@ -1,5 +1,6 @@
 #!/bin/sh
 #
+# To large, to ugly
 set -u
 
 LINKDIR="${1:-}"
@@ -11,26 +12,7 @@ if [ -n "$LINKDIR" ] ; then
 fi
 
 SCRIPTNAME="${0##*/}"
-SCRIPTDIR="$(cd "${0%/*}" ; pwd -P ;)"
-
-SCRIPTDIR_NAME="${SCRIPTDIR##*/}"
-
-HOMEPATH=
-DOTFILES=
-case "$SCRIPTDIR_NAME" in
-    *-*-*) die "Err: please only one '-' in dir" ;;
-    dot-files) 
-        DOTFILES=1 
-        HOMEPATH="$HOME/." ;;
-    *-files) 
-        HOMEPATH="$HOME/${SCRIPTDIR_NAME%%-*}/" 
-        mkdir -p "$HOMEPATH" || die "Err: could not create HOMEPATH '$HOMEPATH'"
-        ;;
-    *-*) die "Err: please ending on '*-files'" ;;
-    *) die "Err: please at least one '-' in dir" ;;
-esac
-
-
+SCRIPTDIR="$(cd "$(dirname "$0")" ; pwd -P ;)"
 
 link_to_target(){
     local source="${1:-}"
@@ -76,15 +58,17 @@ link_to_linkdir(){
     local target_item="${2:-}"
     [ -n "$target_item" ] || die "Err: no target_item"
 
-    if [ -n "$LINKDIR" ] ; then
-        if [ -n "$DOTFILES" ] ; then
-            rm -f "$LINKDIR/.$target_item"
-            ln -s "$i" "$LINKDIR/.$target_item"
-        else
-            rm -f "$LINKDIR/$target_item"
-            ln -s "$i" "$LINKDIR/$target_item"
-        fi
-    fi
+    # TODO
+    case "$target_item" in
+        */*) : ;;
+        *)
+            if [ -n "$LINKDIR" ] ; then
+                rm -f "$LINKDIR/.$target_item"
+                ln -s "$i" "$LINKDIR/.$target_item"
+            fi
+            ;;
+    esac
+
 }
 
 handle_dir(){
@@ -140,4 +124,4 @@ handle_dir(){
     done
 }
 
-handle_dir "$HOMEPATH" "$PWD"
+handle_dir "$HOME/." "$PWD"

@@ -3,10 +3,10 @@
 # - see /usr/share/doc/bash/examples/startup-files (in the package bash-doc) for examples
 # - configurations for interactive Bash usage , aliases, favorite editor, config the bash prompt
 
-# If not running interactively, don't do anything
 
 # ~/.profile is loaded initially, but this is a simple way to update
 # edits in ~/.profile: simpy opening a new shell
+
 
 ######## NONINTERACTIVE SHELL
 
@@ -16,36 +16,21 @@ else
     echo "Warn: ~/.profile not loaded" >&2
 fi
 
-if [ -d "${PROFILE__SHELLCONF_HOME:-}" ] ; then
-    for confdir in "$PROFILE__SHELLCONF_HOME"/*; do
-        [ -d "$confdir" ] || continue
-        for shfile in "$confdir"/*.*sh ; do
-            case "$shfile" in
-                *.sh|*.bash) 
-                    #echo source "$shfile"
-                    [ -f "$shfile" ] && source "$shfile" ;;
-                *) : ;;
-            esac
-        done
-    done
-fi
+sourcing_files="$HOME/kit/inc/sourcing_files.bash"
+
+[ -f "$sourcing_files" ] && source "$sourcing_files" "$HOME/kit/conf"
+
 
 # if this is a non-interactive (login) shell, then this is it
 [ -z "$PS1" ] && return
 
 ######## INTERACTIVE SHELL
+#
+[ -f "$sourcing_files" ] && source "$sourcing_files" "$HOME/kit/aliases"
 
-for dir in "${PROFILE__ALIASES_HOME:-}" ; do
-   [ -d "$dir" ] || continue
-   for shfile in $dir/*.*sh ; do
-      case "$shfile" in
-         *.sh|*.bash) 
-             #[ -f "$shfile" ] && echo source "$shfile" 
-             [ -f "$shfile" ] && source "$shfile" ;;
-         *) : ;;
-      esac
-   done
-done
+sourcing_aliases="$HOME/kit/inc/sourcing_aliases.bash"
+
+[ -f "$sourcing_aliases" ] && source "$sourcing_aliases" "$HOME/kit" 'utils'
 
 ## GLOBAL SETTINGS
 # Setting for the new UTF-8 terminal support in Lion
