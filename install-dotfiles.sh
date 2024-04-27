@@ -7,12 +7,19 @@ LINKDIR="${1:-}"
 
 die () { echo "$@"; exit 1; }
 
-if [ -n "$LINKDIR" ] ; then
-    [ -d "$LINKDIR" ] || die "Err: no valid LINKDIR '$LINKDIR'"
-fi
 
 SCRIPTNAME="${0##*/}"
 SCRIPTDIR="$(cd "$(dirname "$0")" ; pwd -P ;)"
+
+if [ -n "$LINKDIR" ] ; then
+    if [ -d "$LINKDIR" ]; then
+        PWDNAME="${PWD##*/}"
+        rm -f "$LINKDIR/$PWDNAME"
+        ln -s "$PWD" "$LINKDIR/$PWDNAME"
+    else
+        die "Err: no valid LINKDIR '$LINKDIR'"
+    fi
+fi
 
 link_to_target(){
     local source="${1:-}"

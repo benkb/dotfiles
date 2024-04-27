@@ -16,7 +16,7 @@ else
     echo "Warn: ~/.profile not loaded" >&2
 fi
 
-sourcing_files="$HOME/kit/inc/sourcing_files.bash"
+sourcing_files="$HOME/.config/shellinc/sourcing_files.bash"
 
 [ -f "$sourcing_files" ] && source "$sourcing_files" "$HOME/kit/conf"
 
@@ -28,9 +28,9 @@ sourcing_files="$HOME/kit/inc/sourcing_files.bash"
 #
 [ -f "$sourcing_files" ] && source "$sourcing_files" "$HOME/kit/aliases"
 
-sourcing_aliases="$HOME/kit/inc/sourcing_aliases.bash"
+gen_aliases="$HOME/.config/shellinc/gen_aliases.bash"
 
-[ -f "$sourcing_aliases" ] && source "$sourcing_aliases" "$HOME/kit" 'utils'
+[ -f "$gen_aliases" ] && source "$gen_aliases" "$HOME/kit" 'utils'
 
 ## GLOBAL SETTINGS
 # Setting for the new UTF-8 terminal support in Lion

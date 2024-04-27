@@ -26,7 +26,7 @@ else
 end
 
 
-set sourcing_files "$HOME/kit/inc/sourcing_files.fish"
+set sourcing_files "$HOME/.config/shellinc/sourcing_files.fish"
 
 [ -f "$sourcing_files" ] && source $sourcing_files "$HOME/kit/conf"
 

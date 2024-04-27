@@ -1,4 +1,5 @@
 
+
 dirinput="${1:-}"
 dirfilter="${2:-}"
 
