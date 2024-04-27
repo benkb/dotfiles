@@ -26,19 +26,20 @@ else
 end
 
 
-set sourcing_files "$HOME/.config/shellinc/sourcing_files.fish"
+set config_utils "$HOME/.config/fish/config_utils.fish"
+set config_utils_sourced ''
+[ -f "$config_utils" ] && source "$config_utils" && set config_utils_sourced 1 
 
-[ -f "$sourcing_files" ] && source $sourcing_files "$HOME/kit/conf"
+[ -n "$config_utils_sourced" ] && config_utils__run 'file_sourcing' "$HOME/kit/conf"
 
 status is-interactive || return 0 
 
 
 ######## INTERACTIVE SHELL
 
-[ -f "$sourcing_files" ] && source $sourcing_files "$HOME/kit/aliases"
-
-set gen_aliases "$HOME/.config/shellinc/gen_aliases.fish"
-
-[ -f "$gen_aliases" ] && source $gen_aliases "$HOME/kit/" 'utils'
+if [ -n "$config_utils_sourced" ] 
+    config_utils__run 'file_sourcing' "$HOME/kit" 'conf' 'aliases'
+    config_utils__run 'alias_gen' "$HOME/kit/" 'utils'
+end
 
 

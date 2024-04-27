@@ -9,6 +9,7 @@
 
 
 ######## NONINTERACTIVE SHELL
+#
 
 if [ -f ~/.profile ] ; then
     . ~/.profile
@@ -16,9 +17,13 @@ else
     echo "Warn: ~/.profile not loaded" >&2
 fi
 
-sourcing_files="$HOME/.config/shellinc/sourcing_files.bash"
+bashrc_utils="$HOME/.bashrc_utils.bash"
 
-[ -f "$sourcing_files" ] && source "$sourcing_files" "$HOME/kit/conf"
+
+bashrc__utils_loaded=
+[ -f "$bashrc_utils" ] && source "$bashrc_utils" && bashrc__utils_loaded=1 
+
+[ -n "$bashrc__utils_loaded" ] && bashrc_utils__run 'file_sourcing' "$HOME/kit" 'conf'
 
 
 # if this is a non-interactive (login) shell, then this is it
@@ -26,11 +31,11 @@ sourcing_files="$HOME/.config/shellinc/sourcing_files.bash"
 
 ######## INTERACTIVE SHELL
 #
-[ -f "$sourcing_files" ] && source "$sourcing_files" "$HOME/kit/aliases"
+if [ -n "$bashrc__utils_loaded" ]; then
+    bashrc_utils__run 'file_sourcing' "$HOME/kit" 'aliases'
+    bashrc_utils__run 'alias_gen' "$HOME/kit" 'utils' 'vi-utils'
+fi
 
-gen_aliases="$HOME/.config/shellinc/gen_aliases.bash"
-
-[ -f "$gen_aliases" ] && source "$gen_aliases" "$HOME/kit" 'utils'
 
 ## GLOBAL SETTINGS
 # Setting for the new UTF-8 terminal support in Lion
