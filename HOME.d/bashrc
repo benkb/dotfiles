@@ -17,13 +17,13 @@ else
     echo "Warn: ~/.profile not loaded" >&2
 fi
 
-bashrc_utils="$HOME/.bashrc_utils.bash"
+bashrc__script_path="$HOME/.bashrc_utils.bash"
 
 
-bashrc__utils_loaded=
-[ -f "$bashrc_utils" ] && source "$bashrc_utils" && bashrc__utils_loaded=1 
+bashrc__script_loaded=
+[ -f "$bashrc__script_path" ] && source "$bashrc__script_path" && bashrc__script_loaded=1 
 
-[ -n "$bashrc__utils_loaded" ] && bashrc_utils__run 'file_sourcing' "$HOME/kit" 'conf'
+[ -n "$bashrc__script_loaded" ] && bashrc_utils__run 'file_sourcing' "$HOME/kit" 'conf'
 
 
 # if this is a non-interactive (login) shell, then this is it
@@ -31,7 +31,7 @@ bashrc__utils_loaded=
 
 ######## INTERACTIVE SHELL
 #
-if [ -n "$bashrc__utils_loaded" ]; then
+if [ -n "$bashrc__script_loaded" ]; then
     bashrc_utils__run 'file_sourcing' "$HOME/kit" 'aliases'
     bashrc_utils__run 'alias_gen' "$HOME/kit" 'utils' 'vi-utils'
 fi

@@ -1,4 +1,4 @@
-#!/bin/sh
+#/bin/sh
 #
 # To large, to ugly
 set -u
@@ -29,31 +29,19 @@ link_to_target(){
 
     local target_dir="$(dirname "$target")"
 
-    if [ -d "$target_dir" ]; then
-        :
-    elif [ -L "$target_dir" ]; then
-        die "Err: '$target_dir' is a link"
-    elif [ -f "$target_dir" ]; then
-        die "Err: '$target_dir' is a file"
-    elif [ -e "$target_dir" ]; then
-        die "Err: '$target_dir' exists already"
+    if [ -e "$target_dir" ] ; then
+        if [ -f "$target_dir" ]; then
+            die "Err: '$target_dir' is a file"
+        fi
     else
-        mkdir -p "$target_dir" 
+        rm -f "$target_dir"
+        mkdir -p "$target_dir"
     fi
 
-    if [ -L "$target" ]; then
-        rm -f "$target"
-    elif [ -d "$target" ]; then
-        if [ -L "$target" ] ; then
-            rm -f "$target"
-        else
-            die "Err: the target '$target' is a directory, cannot remove"
-        fi
-    elif [ -f "$target" ]; then
-        die "Err: cannot remove file '$target'"
-    else
-        [ -e "$target" ] && die "Err: cannot remove item '$target'"
+    if [ -e "$target" ] ; then
+        [ -L "$target" ] || die "Err: target not a link: '$target'" 
     fi
+    rm -f "$target"
 
     ln -s "$source" "$target"
 }
@@ -65,28 +53,32 @@ link_to_linkdir(){
     local target_item="${2:-}"
     [ -n "$target_item" ] || die "Err: no target_item"
 
-    # TODO
-    case "$target_item" in
-        */*) : ;;
-        *)
-            if [ -n "$LINKDIR" ] ; then
-                rm -f "$LINKDIR/.$target_item"
-                ln -s "$i" "$LINKDIR/.$target_item"
-            fi
-            ;;
-    esac
-
+    if [ -n "$LINKDIR" ] ; then
+        rm -f "$LINKDIR/.$target_item"
+        ln -s "$i" "$LINKDIR/.$target_item"
+    fi
 }
 
 handle_dir(){
-   local homepath="${1:-}"
-   [ -n "$homepath" ] || die "Err: no homepath"
-   [ -d "$homepath" ] || die "Err: no valid homepath '$homepath'"
-   local dir="${2:-}"
-   [ -n "$dir" ] || die "Err: no dir"
-   [ -d "$dir" ] || die "Err: no valid dir '$dir'"
+    local cwdir="${1:-}"
+    [ -n "$cwdir" ] || die "Err: no cwdir"
 
-    for i in "$dir"/* ; do
+    local home_item="${2:-}"
+    [ -n "$home_item" ] || die "Err: no home_item" 
+
+    local is_home=
+    local homepath=
+    if [ "$home_item" = "$HOME" ] ; then
+        is_home=1
+        homepath="$HOME/."
+    else
+        homepath="$home_item/"
+    fi
+
+   [ -d "$cwdir" ] || die "Err: no valid cwdir '$cwdir'"
+   [ -e "$homepath" ] || die "Err: no valid homepath '$homepath'"
+
+    for i in "$cwdir"/* ; do
         [ -f "$i" ] || [ -d "$i" ] || continue 
 
         local bi="${i##*/}"
@@ -97,13 +89,13 @@ handle_dir(){
 
         if [ -f "$i" ] ; then
             link_to_target "$i" "${homepath}${bi}"
-            link_to_linkdir "$i" "${homepath}${bi}"
+            [ -n "$is_home" ] && link_to_linkdir "$i" "${bi}"
         elif [ -d "$i" ] ; then
-            # magic: fish-config -> config/fish; dot-HOME -> /home/baba/dot
+            # magic: fish-config -> config/fish; HOME.d -> /home/baba
             local target_folder="$(perl -e '($a)=@ARGV; print(join("/", reverse( map { (/^[A-Z]+$/)?$ENV{$_}:$_ } split("-", $a))))' "$target_name")" 
 
-            local target_dirpath=
             local target_topdir=
+            local target_dirpath=
             case "$target_folder" in
                 /*)
                     target_topdir="${target_name}"
@@ -115,13 +107,12 @@ handle_dir(){
                     ;;
             esac
 
-            link_to_linkdir "$i" "${target_topdir}"
+            [ -n "$is_home" ] && link_to_linkdir "$i" "${target_topdir}"
 
             case "$bi" in
-                dotfiles)   handle_dir "$HOME/." "$i" ;;
                 *.d)   
                     mkdir -p "$target_dirpath" || die "Err: could not create '$target_dirpath'"
-                    handle_dir "$target_dirpath/" "$i" ;;
+                    handle_dir "$i" "$target_dirpath" ;;
                 *.l) link_to_target "$i" "$target_dirpath" ;;
                 *) die "Err; don't know what to do with '$bi', is it [l]ink or [d]irectory?" ;;
             esac
@@ -131,4 +122,4 @@ handle_dir(){
     done
 }
 
-handle_dir "$HOME/." "$PWD"
+handle_dir "$PWD" "$HOME"
