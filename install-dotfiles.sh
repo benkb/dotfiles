@@ -5,7 +5,8 @@ set -u
 
 LINKDIR="${1:-}"
 
-die () { echo "$@"; exit 1; }
+die () { echo "$@" >&2; exit 1; }
+info () { echo "$@" >&2;  }
 
 
 SCRIPTNAME="${0##*/}"
@@ -21,27 +22,36 @@ if [ -n "$LINKDIR" ] ; then
     fi
 fi
 
+create_parent_dir(){
+    local dir="${1:-}"
+    [ -n "$dir" ] || die "Err: no target_item"
+
+    local parent_dir="$(dirname "$dir")"
+
+    if [ -e "$parent_dir" ] ; then
+        [ -d "$parent_dir" ] || die "Err: target parent somehow exists in '$parent_dir'"
+    else
+        rm -f "$parent_dir"
+        mkdir -p "$parent_dir"
+    fi
+
+}
+
 link_to_target(){
     local source="${1:-}"
     [ -n "$source" ] || die "Err: no source"
     local target="${2:-}"
     [ -n "$target" ] || die "Err: no target_item"
 
-    local target_dir="$(dirname "$target")"
-
-    if [ -e "$target_dir" ] ; then
-        if [ -f "$target_dir" ]; then
-            die "Err: '$target_dir' is a file"
+    if [ -e "$target" ] ; then
+        if  [ -L "$target" ] ; then
+            rm -f "$target"
+        else
+            die "Err: taget alredy exists '$target'"
         fi
     else
-        rm -f "$target_dir"
-        mkdir -p "$target_dir"
+        rm -f "$target"
     fi
-
-    if [ -e "$target" ] ; then
-        [ -L "$target" ] || die "Err: target not a link: '$target'" 
-    fi
-    rm -f "$target"
 
     ln -s "$source" "$target"
 }
@@ -54,8 +64,8 @@ link_to_linkdir(){
     [ -n "$target_item" ] || die "Err: no target_item"
 
     if [ -n "$LINKDIR" ] ; then
-        rm -f "$LINKDIR/.$target_item"
-        ln -s "$i" "$LINKDIR/.$target_item"
+        rm -f "$LINKDIR/$target_item"
+        ln -s "$source" "$LINKDIR/$target_item"
     fi
 }
 
@@ -63,58 +73,74 @@ handle_dir(){
     local cwdir="${1:-}"
     [ -n "$cwdir" ] || die "Err: no cwdir"
 
-    local home_item="${2:-}"
-    [ -n "$home_item" ] || die "Err: no home_item" 
-
-    local is_home=
-    local homepath=
-    if [ "$home_item" = "$HOME" ] ; then
-        is_home=1
-        homepath="$HOME/."
-    else
-        homepath="$home_item/"
-    fi
-
    [ -d "$cwdir" ] || die "Err: no valid cwdir '$cwdir'"
-   [ -e "$homepath" ] || die "Err: no valid homepath '$homepath'"
 
     for i in "$cwdir"/* ; do
-        [ -f "$i" ] || [ -d "$i" ] || continue 
+      [ -f "$i" ] || [ -d "$i" ] || continue 
 
         local bi="${i##*/}"
-
-        case "$bi" in $SCRIPTNAME|README*) continue ;; *) : ;; esac
-
         local target_name="${bi%.*}"
 
         if [ -f "$i" ] ; then
-            link_to_target "$i" "${homepath}${bi}"
-            [ -n "$is_home" ] && link_to_linkdir "$i" "${bi}"
+            case "$bi" in 
+                $SCRIPTNAME|README*|readme*|Readme|License*|LICENSE*|install*) continue ;; 
+                *) 
+                    link_to_target "$i" "${HOME}/.${bi}" 
+                    link_to_linkdir "$i" ".${bi}" 
+                    ;; 
+            esac
         elif [ -d "$i" ] ; then
             # magic: fish-config -> config/fish; HOME.d -> /home/baba
             local target_folder="$(perl -e '($a)=@ARGV; print(join("/", reverse( map { (/^[A-Z]+$/)?$ENV{$_}:$_ } split("-", $a))))' "$target_name")" 
 
-            local target_topdir=
-            local target_dirpath=
+            local target_path=
+            local linkdir_folder=
             case "$target_folder" in
-                /*)
-                    target_topdir="${target_name}"
-                    target_dirpath="$target_folder" 
+                /*) die "Err: this absolut path makes no sense '$target_folder'"
+                    #target_path="$target_folder" 
+                    #linkdir_folder="${target_folder%%/*}"
                     ;;
-                *) 
-                    target_topdir="${target_folder%%/*}"
-                    target_dirpath="${homepath}$target_folder" 
+                */*) 
+                    target_path="$HOME/.$target_folder"
+                    linkdir_folder="${target_folder%%/*}"
                     ;;
+                *)
+                    linkdir_folder="${target_folder}"
             esac
 
-            [ -n "$is_home" ] && link_to_linkdir "$i" "${target_topdir}"
+
+            local target_endpath=
+            if [ -n "$target_path" ] ; then
+                create_parent_dir "$target_path"
+                target_endpath="$target_path"
+            else
+                target_endpath="$HOME/.$target_folder"
+            fi
+
 
             case "$bi" in
+                -*|*-) die "Err: invalid dirname '$bi'" ;;
                 *.d)   
-                    mkdir -p "$target_dirpath" || die "Err: could not create '$target_dirpath'"
-                    handle_dir "$i" "$target_dirpath" ;;
-                *.l) link_to_target "$i" "$target_dirpath" ;;
-                *) die "Err; don't know what to do with '$bi', is it [l]ink or [d]irectory?" ;;
+                    mkdir -p "$target_endpath" || die "Err: could not create '$target_path'"
+                    for ii in "$i"/*; do
+                        local bii="${ii##*/}"
+                        link_to_target "$ii" "${target_endpath}/${bii}"
+                    done
+
+                    link_to_linkdir "$i" ".${linkdir_folder}"
+                    ;;
+               *.l) 
+                   link_to_target "$i" "$target_endpath"
+                    link_to_linkdir "$i" ".${linkdir_folder}"
+                    ;;
+                *) 
+                    link_to_linkdir "$i" "${target_name}"
+                    for ii in "$i"/* ; do
+                        local bii="${ii##*/}"
+                        link_to_target "$ii" "${HOME}/.${bii}" 
+                         link_to_linkdir "$ii" ".${bii}" 
+                    done
+                    ;;
             esac
         else
             echo "Warn: omit $i"
@@ -122,4 +148,4 @@ handle_dir(){
     done
 }
 
-handle_dir "$PWD" "$HOME"
+handle_dir "$PWD"
